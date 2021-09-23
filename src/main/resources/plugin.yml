@@ -1,0 +1,9 @@
+name: ${project.artifactId}
+version: ${project.version}
+main: ${project.groupId}.addon.chunkanalyzer.${project.artifactId}
+commands:
+  chunkanalyzer:
+    aliases:
+      - imanitychunkanalyzer
+      - imanitychunkanalyzeraddon
+      - chunkanalyzeraddon
