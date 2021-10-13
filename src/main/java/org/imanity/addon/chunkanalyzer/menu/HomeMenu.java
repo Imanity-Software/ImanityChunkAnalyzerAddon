@@ -24,21 +24,145 @@
 
 package org.imanity.addon.chunkanalyzer.menu;
 
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.ClickType;
+import org.bukkit.inventory.ItemStack;
+import org.imanity.addon.chunkanalyzer.util.item.ItemBuilder;
 import org.imanity.addon.chunkanalyzer.util.menu.Button;
-import org.imanity.addon.chunkanalyzer.util.menu.Menu;
+import org.imanity.addon.chunkanalyzer.util.menu.pagination.PaginatedMenu;
+import org.imanity.imanityspigot.chunk.ChunkAnalyse;
 
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-public class HomeMenu extends Menu {
+public class HomeMenu extends PaginatedMenu {
 
     @Override
-    public String getTitle(Player player) {
-        return null;
+    public String getPrePaginatedTitle(Player player) {
+        return ChatColor.AQUA + "ChunkAnalyzer";
     }
 
     @Override
-    public Map<Integer, Button> getButtons(Player player) {
-        return null;
+    public Map<Integer, Button> getGlobalButtons(Player player) {
+        Map<Integer, Button> buttons = new HashMap<>();
+        ChunkAnalyse chunkAnalyse = Bukkit.imanity().getChunkAnalyse();
+
+        buttons.put(2, new Button() {
+            @Override
+            public ItemStack getButtonItem(Player player) {
+                return new ItemBuilder(Material.INK_SACK)
+                        .name(ChatColor.GREEN + "Start ChunkAnalyzer Record")
+                        .data(10)
+                        .shiny()
+                        .build();
+            }
+            @Override
+            public void clicked(Player player, int slot, ClickType clickType, int hotbarButton) {
+                if (chunkAnalyse.isRecording()) {
+                    player.sendMessage(ChatColor.RED + "The ChunkAnalyzer is already started!");
+                } else {
+                    player.sendMessage(ChatColor.GREEN + "You have successfully started the ChunkAnalyzer.");
+                    chunkAnalyse.start();
+                }
+            }
+        });
+        buttons.put(4, new Button() {
+            @Override
+            public ItemStack getButtonItem(Player player) {
+                return new ItemBuilder(Material.BOOK)
+                        .shiny()
+                        .build(); // informations
+            }
+        });
+        buttons.put(6, new Button() {
+            @Override
+            public ItemStack getButtonItem(Player player) {
+                return new ItemBuilder(Material.INK_SACK)
+                        .name(ChatColor.RED + "Stop ChunkAnalyzer Record")
+                        .data(1)
+                        .shiny()
+                        .build();
+            }
+            @Override
+            public void clicked(Player player, int slot, ClickType clickType, int hotbarButton) {
+                if (!chunkAnalyse.isRecording()) {
+                    player.sendMessage(ChatColor.RED + "The ChunkAnalyzer is not started!");
+                } else {
+                    player.sendMessage(ChatColor.GREEN + "You have successfully stopped the ChunkAnalyzer.");
+                    chunkAnalyse.stop();
+                }
+            }
+        });
+        for (int i = 9; i < 18; i++) {
+            buttons.put(i, new Button() {
+                @Override
+                public ItemStack getButtonItem(Player player) {
+                    return new ItemBuilder(Material.STAINED_GLASS_PANE)
+                            .data(3)
+                            .name(" ")
+                            .build();
+                }
+            });
+        }
+        return buttons;
+    }
+
+    @Override
+    public Map<Integer, Button> getAllPagesButtons(Player player) {
+        Map<Integer, Button> buttons = new HashMap<>();
+
+        Bukkit.getWorlds().stream()
+                .sorted(Collections.reverseOrder(Comparator.comparingInt(w -> w.getPlayers().size())))
+                .collect(Collectors.toList()).forEach(world -> buttons.put(buttons.size() + 9, new Button() {
+                    @Override
+                    public ItemStack getButtonItem(Player player) {
+                        ItemBuilder builder = new ItemBuilder(getMaterialByEnvironment(world.getEnvironment()))
+                                .name("&7&l• " + getChatColorByEnvironment(world.getEnvironment()) + world.getName() + " &7&l•");
+
+                        if (player.getWorld() == world) {
+                            builder.shiny();
+                        }
+                        return builder.build();
+                    }
+                    @Override
+                    public void clicked(Player player, int slot, ClickType clickType, int hotbarButton) {
+                        new WorldMenu(world).openMenu(player);
+                    }
+                }));
+        return buttons;
+    }
+
+    @Override
+    public int getMaxItemsPerPage(Player player) {
+        return 27;
+    }
+
+    private Material getMaterialByEnvironment(World.Environment environment) {
+        switch (environment) {
+            case NETHER:
+                return Material.NETHERRACK;
+            case THE_END:
+                return Material.ENDER_STONE;
+            default:
+                return Material.GRASS;
+        }
+    }
+
+    private ChatColor getChatColorByEnvironment(World.Environment environment) {
+        switch (environment) {
+            case NETHER:
+                return ChatColor.RED;
+            case THE_END:
+                return ChatColor.DARK_PURPLE;
+            default:
+                return ChatColor.DARK_GREEN;
+        }
     }
 }

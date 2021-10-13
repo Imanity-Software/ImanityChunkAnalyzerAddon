@@ -122,7 +122,7 @@ public class ItemBuilder implements Cloneable {
 
     public ItemBuilder clearLore() {
         final ItemMeta meta = this.itemStack.getItemMeta();
-        meta.setLore(new ArrayList<String>());
+        meta.setLore(new ArrayList<>());
         this.itemStack.setItemMeta(meta);
         return this;
     }
@@ -161,6 +161,7 @@ public class ItemBuilder implements Cloneable {
 
         meta.addEnchant(Enchantment.PROTECTION_FIRE, 1, false);
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+        this.itemStack.setItemMeta(meta);
         return this;
     }
 
