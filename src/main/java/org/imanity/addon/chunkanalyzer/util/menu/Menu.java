@@ -50,10 +50,16 @@ public abstract class Menu {
 		if (initialized) {
 			throw new IllegalStateException("Menu system already initialized!");
 		}
+		// Supposed to be unregistered automatically by the server so dont need to clear at destroy
 		plugin.getServer().getScheduler().runTaskTimer(plugin, new MenuUpdateTask(), 100L, 100L);
 		plugin.getServer().getPluginManager().registerEvents(new ButtonListener(plugin), plugin);
 
 		initialized = true;
+	}
+
+	public static void destroy(JavaPlugin plugin) {
+		MENUS.clear();
+		initialized = false;
 	}
 
 	public static final Map<UUID, Menu> MENUS = new ConcurrentHashMap<>();
@@ -72,9 +78,9 @@ public abstract class Menu {
 	private boolean fillBorders = false;
 
 	private long openMillis, lastAccessMillis;
-	private org.imanity.addon.chunkanalyzer.util.menu.Button placeholderButton = org.imanity.addon.chunkanalyzer.util.menu.Button.placeholder(Material.STAINED_GLASS_PANE, (byte) 15, " ");
+	private Button placeholderButton = Button.placeholder(Material.STAINED_GLASS_PANE, (byte) 15, " ");
 
-	private ItemStack createItemStack(final Player player, final org.imanity.addon.chunkanalyzer.util.menu.Button button) {
+	private ItemStack createItemStack(final Player player, final Button button) {
 		return button.getButtonItem(player);
 	}
 
@@ -87,7 +93,7 @@ public abstract class Menu {
 	public void openMenu(final Player player, boolean update) {
 		this.buttons = this.getButtons(player);
 
-		final org.imanity.addon.chunkanalyzer.util.menu.Menu previousMenu = org.imanity.addon.chunkanalyzer.util.menu.Menu.MENUS.get(player.getUniqueId());
+		final Menu previousMenu = Menu.MENUS.get(player.getUniqueId());
 		Inventory inventory = null;
 		final int size = this.getSize() == -1 ? this.size(this.buttons) : this.getSize();
 		String title = this.getTitle(player).replace("&", "§");
@@ -120,7 +126,7 @@ public abstract class Menu {
 
 		MENUS.put(player.getUniqueId(), this);
 
-		for (final Map.Entry<Integer, org.imanity.addon.chunkanalyzer.util.menu.Button> buttonEntry : this.buttons.entrySet()) {
+		for (final Map.Entry<Integer, Button> buttonEntry : this.buttons.entrySet()) {
 			inventory.setItem(buttonEntry.getKey(), createItemStack(player, buttonEntry.getValue()));
 		}
 

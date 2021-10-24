@@ -33,7 +33,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 public abstract class Button {
 
-	public static org.imanity.addon.chunkanalyzer.util.menu.Button placeholder(final Material material, final byte data, String title) {
+	public static Button placeholder(final Material material, final byte data, String title) {
 		return (new org.imanity.addon.chunkanalyzer.util.menu.Button() {
 			public ItemStack getButtonItem(Player player) {
 				ItemStack it = new ItemStack(material, 1, data);

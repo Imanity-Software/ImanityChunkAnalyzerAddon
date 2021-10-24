@@ -20,6 +20,11 @@ public class ImanityChunkAnalyzerAddon extends JavaPlugin {
         getLogger().info("ImanityChunkAnalyzerAddon has been successfully started in " + (System.currentTimeMillis() - start) + "ms.");
     }
 
+    @Override
+    public void onDisable() {
+        Menu.destroy(this);
+    }
+
     private boolean isServerRunningImanitySpigot3() {
         try {
             Class.forName("org.imanity.imanityspigot.ImanitySpigot");
