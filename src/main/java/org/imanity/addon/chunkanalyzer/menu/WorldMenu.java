@@ -34,9 +34,9 @@ import org.imanity.addon.chunkanalyzer.util.menu.buttons.BackButton;
 import org.imanity.addon.chunkanalyzer.util.menu.pagination.PaginatedMenu;
 import org.imanity.imanityspigot.chunk.ChunkAnalyse;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 public class WorldMenu extends PaginatedMenu {
 
@@ -54,12 +54,12 @@ public class WorldMenu extends PaginatedMenu {
         this.world = world;
 
         this.sortTarget = ChunkAnalyse.SortTarget.ALL;
-        this.sortMethod = ChunkAnalyse.SortMethod.BY_AVG;
+        this.sortMethod = ChunkAnalyse.SortMethod.BY_TOTAL;
     }
 
     @Override
     public String getPrePaginatedTitle(Player player) {
-        return ChatColor.BLUE + "World " + this.world.getName();
+        return ChatColor.BLUE + "World: " + this.world.getName();
     }
 
     @Override
@@ -70,26 +70,20 @@ public class WorldMenu extends PaginatedMenu {
             @Override
             public ItemStack getButtonItem(Player player) {
                 return new ItemBuilder(Material.TNT)
-                        .name(ChatColor.DARK_BLUE + "Change Sort Target")
-                        .lore("&7&l• &b" + sortTarget.name())
+                        .name(ChatColor.AQUA + "Change Sort Target")
+                        .lore(" ")
+                        .lore(
+                                Arrays.stream(ChunkAnalyse.SortTarget.values())
+                                        .map(value -> (value == sortTarget ? "&7&l• &a" : "&c") + value.name())
+                                        .collect(Collectors.toList()))
                         .shiny()
                         .build();
             }
             @Override
             public void clicked(Player player, int slot, ClickType clickType, int hotbarButton) {
-                switch (sortTarget) {
-                    case ALL:
-                        sortTarget = ChunkAnalyse.SortTarget.ENTITIES;
-                        break;
-                    case ENTITIES:
-                        sortTarget = ChunkAnalyse.SortTarget.BLOCK_OPERATION;
-                        break;
-                    case BLOCK_OPERATION:
-                        sortTarget = ChunkAnalyse.SortTarget.TILE_ENTITIES;
-                        break;
-                    case TILE_ENTITIES:
-                        sortTarget = ChunkAnalyse.SortTarget.ALL;
-                }
+                ChunkAnalyse.SortTarget[] values = ChunkAnalyse.SortTarget.values();
+
+                sortTarget = values[(sortTarget.ordinal() + 1) % values.length];
             }
             @Override
             public boolean shouldUpdate(Player player, int slot, ClickType clickType) {
@@ -100,23 +94,20 @@ public class WorldMenu extends PaginatedMenu {
             @Override
             public ItemStack getButtonItem(Player player) {
                 return new ItemBuilder(Material.SIGN)
-                        .name(ChatColor.DARK_BLUE + "Change Sort Method")
-                        .lore("&7&l• &b" + sortMethod.name())
+                        .name(ChatColor.AQUA + "Change Sort Method")
+                        .lore(" ")
+                        .lore(
+                                Arrays.stream(ChunkAnalyse.SortMethod.values())
+                                        .map(value -> (value == sortMethod ? "&7&l• &a" : "&c") + value.name())
+                                        .collect(Collectors.toList()))
                         .shiny()
                         .build();
             }
             @Override
             public void clicked(Player player, int slot, ClickType clickType, int hotbarButton) {
-                switch (sortMethod) {
-                    case BY_AVG:
-                        sortMethod = ChunkAnalyse.SortMethod.BY_MAX;
-                        break;
-                    case BY_MAX:
-                        sortMethod = ChunkAnalyse.SortMethod.BY_TOTAL;
-                        break;
-                    case BY_TOTAL:
-                        sortMethod = ChunkAnalyse.SortMethod.BY_AVG;
-                }
+                ChunkAnalyse.SortMethod[] values = ChunkAnalyse.SortMethod.values();
+
+                sortMethod = values[(sortMethod.ordinal() + 1) % values.length];
             }
             @Override
             public boolean shouldUpdate(Player player, int slot, ClickType clickType) {
@@ -157,6 +148,16 @@ public class WorldMenu extends PaginatedMenu {
         Map<Integer, Button> buttons = new HashMap<>();
 
         if (this.worldAnalysesExport == null) {
+            for (int i = 0; i < 9; i++) {
+                buttons.put(buttons.size() + 9, new Button() {
+                    @Override
+                    public ItemStack getButtonItem(Player player) {
+                        return new ItemBuilder(Material.PAPER)
+                                .name(ChatColor.RED + "Start the analyze to get a chunk report!")
+                                .build();
+                    }
+                });
+            }
             return buttons;
         }
         AtomicInteger count = new AtomicInteger(0);
