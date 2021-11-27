@@ -13,8 +13,8 @@
  * The above copyright notice and this permission notice shall be included in all
  * copies or substantial portions of the Software.
  *
- *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
@@ -22,35 +22,26 @@
  * SOFTWARE.
  */
 
-package org.imanity.addon.chunkanalyzer.command;
+package org.imanity.addon.chunkanalyzer.listener;
 
-import org.bukkit.ChatColor;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
+import org.bukkit.event.Listener;
 import org.imanity.addon.chunkanalyzer.manager.ChunkAnalyzerManager;
-import org.imanity.addon.chunkanalyzer.menu.HomeMenu;
+import org.imanity.imanityspigot.event.chunk.ChunkAnalyseEndEvent;
+import org.imanity.imanityspigot.event.chunk.ChunkAnalyseStartEvent;
 
-public class ChunkAnalyzerCommand implements CommandExecutor {
+public class ChunkAnalyzerListener implements Listener {
 
     private final ChunkAnalyzerManager manager;
 
-    public ChunkAnalyzerCommand(ChunkAnalyzerManager manager) {
+    public ChunkAnalyzerListener(ChunkAnalyzerManager manager) {
         this.manager = manager;
     }
 
-    @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.RED + "You must be a player to perform this command.");
-            return false;
-        }
-        if (!sender.hasPermission("imanity.chunkanalyzeraddon.admin")) {
-            sender.sendMessage(ChatColor.RED + "You do not have the permission to perform this command.");
-            return false;
-        }
-        new HomeMenu(this.manager).openMenu((Player)sender);
-        return true;
+    private void onChunkAnalyseStart(ChunkAnalyseStartEvent event) {
+        this.manager.setStartedAnalyzerRecordTime(System.currentTimeMillis());
+    }
+
+    private void onChunkAnalyzeEnd(ChunkAnalyseEndEvent event) {
+        this.manager.setEndedAnalyzerRecordTime(System.currentTimeMillis());
     }
 }

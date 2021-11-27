@@ -31,6 +31,7 @@ import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.ItemStack;
+import org.imanity.addon.chunkanalyzer.manager.ChunkAnalyzerManager;
 import org.imanity.addon.chunkanalyzer.util.item.ItemBuilder;
 import org.imanity.addon.chunkanalyzer.util.menu.Button;
 import org.imanity.addon.chunkanalyzer.util.menu.pagination.PaginatedMenu;
@@ -43,6 +44,12 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class HomeMenu extends PaginatedMenu {
+
+    private final ChunkAnalyzerManager manager;
+
+    public HomeMenu(ChunkAnalyzerManager manager) {
+        this.manager = manager;
+    }
 
     @Override
     public String getPrePaginatedTitle(Player player) {
@@ -85,7 +92,7 @@ public class HomeMenu extends PaginatedMenu {
             @Override
             public ItemStack getButtonItem(Player player) {
                 return new ItemBuilder(Material.INK_SACK)
-                        .name(ChatColor.RED + "Stop ChunkAnalyzer Record")
+                        .name(ChatColor.RED + "End ChunkAnalyzer Record")
                         .data(1)
                         .shiny()
                         .build();
@@ -95,7 +102,7 @@ public class HomeMenu extends PaginatedMenu {
                 if (!chunkAnalyse.isRecording()) {
                     player.sendMessage(ChatColor.RED + "The ChunkAnalyzer is not started!");
                 } else {
-                    player.sendMessage(ChatColor.GREEN + "You have successfully stopped the ChunkAnalyzer.");
+                    player.sendMessage(ChatColor.GREEN + "You have successfully ended the ChunkAnalyzer.");
                     chunkAnalyse.stop();
                 }
             }
@@ -127,13 +134,20 @@ public class HomeMenu extends PaginatedMenu {
                                 .name("&7&l• " + getChatColorByEnvironment(world.getEnvironment()) + world.getName() + " &7&l•");
 
                         if (player.getWorld() == world) {
+                            builder.lore(" ", "&7&oThis is the world you are actually in");
                             builder.shiny();
                         }
                         return builder.build();
                     }
                     @Override
                     public void clicked(Player player, int slot, ClickType clickType, int hotbarButton) {
-                        new WorldMenu(world).openMenu(player);
+                        WorldMenu worldMenu = manager.getMenuByWorld(world);
+
+                        if (worldMenu == null) { // Not supposed to happen but just in case
+                            player.sendMessage(ChatColor.RED + "Something wrong happen... Please check the console and report this error.");
+                        } else {
+                            worldMenu.openMenu(player);
+                        }
                     }
                 }));
         return buttons;
@@ -144,7 +158,7 @@ public class HomeMenu extends PaginatedMenu {
         return 27;
     }
 
-    private Material getMaterialByEnvironment(World.Environment environment) {
+    private Material getMaterialByEnvironment(World.Environment environment) { // Better to use set k,v?
         switch (environment) {
             case NETHER:
                 return Material.NETHERRACK;
@@ -155,7 +169,7 @@ public class HomeMenu extends PaginatedMenu {
         }
     }
 
-    private ChatColor getChatColorByEnvironment(World.Environment environment) {
+    private ChatColor getChatColorByEnvironment(World.Environment environment) { // Better to use set k,v?
         switch (environment) {
             case NETHER:
                 return ChatColor.RED;

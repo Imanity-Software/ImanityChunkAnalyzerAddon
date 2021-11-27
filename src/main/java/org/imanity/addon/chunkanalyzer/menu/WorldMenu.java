@@ -28,29 +28,49 @@ import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.ItemStack;
+import org.imanity.addon.chunkanalyzer.data.ChunkAnalyzeResult;
+import org.imanity.addon.chunkanalyzer.manager.ChunkAnalyzerManager;
 import org.imanity.addon.chunkanalyzer.util.item.ItemBuilder;
 import org.imanity.addon.chunkanalyzer.util.menu.Button;
 import org.imanity.addon.chunkanalyzer.util.menu.buttons.BackButton;
 import org.imanity.addon.chunkanalyzer.util.menu.pagination.PaginatedMenu;
 import org.imanity.imanityspigot.chunk.ChunkAnalyse;
 
-import java.util.*;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class WorldMenu extends PaginatedMenu {
 
+    private final ChunkAnalyzerManager manager;
     private final World world;
 
     private ChunkAnalyse.SortTarget sortTarget;
     private ChunkAnalyse.SortMethod sortMethod;
 
-    private ChunkAnalyse.WorldAnalysesExport worldAnalysesExport;
+    private ChunkAnalyzeResult lastChunkAnalyzeResult;
 
-    //private EntityType entityType;
-    //private ChunkAnalyse.TileEntityType tileEntityType;
+    private final static Map<ChunkAnalyse.SortTarget, String> SORT_TARGET_DISPLAY_NAME = new HashMap<>();
+    private final static Map<ChunkAnalyse.SortMethod, String> SORT_METHOD_DISPLAY_NAME = new HashMap<>();
+    private final static NumberFormat FORMATTER = new DecimalFormat("#0.000");
 
-    public WorldMenu(World world) {
+    static {
+        SORT_TARGET_DISPLAY_NAME.put(ChunkAnalyse.SortTarget.ALL, "All");
+        SORT_TARGET_DISPLAY_NAME.put(ChunkAnalyse.SortTarget.BLOCK_OPERATION, "Block Operation");
+        SORT_TARGET_DISPLAY_NAME.put(ChunkAnalyse.SortTarget.ENTITIES, "Entities");
+        SORT_TARGET_DISPLAY_NAME.put(ChunkAnalyse.SortTarget.TILE_ENTITIES, "Tile Entities");
+
+        SORT_METHOD_DISPLAY_NAME.put(ChunkAnalyse.SortMethod.BY_TOTAL, "By Total");
+        SORT_METHOD_DISPLAY_NAME.put(ChunkAnalyse.SortMethod.BY_AVG, "By Average");
+        SORT_METHOD_DISPLAY_NAME.put(ChunkAnalyse.SortMethod.BY_MAX, "By Maximum");
+    }
+
+    public WorldMenu(ChunkAnalyzerManager manager, World world) {
+        this.manager = manager;
         this.world = world;
 
         this.sortTarget = ChunkAnalyse.SortTarget.ALL;
@@ -74,7 +94,7 @@ public class WorldMenu extends PaginatedMenu {
                         .lore(" ")
                         .lore(
                                 Arrays.stream(ChunkAnalyse.SortTarget.values())
-                                        .map(value -> (value == sortTarget ? "&7&l• &a" : "&c") + value.name())
+                                        .map(value -> (value == sortTarget ? "&7&l• &a" : "&c") + SORT_TARGET_DISPLAY_NAME.get(value))
                                         .collect(Collectors.toList()))
                         .shiny()
                         .build();
@@ -98,7 +118,7 @@ public class WorldMenu extends PaginatedMenu {
                         .lore(" ")
                         .lore(
                                 Arrays.stream(ChunkAnalyse.SortMethod.values())
-                                        .map(value -> (value == sortMethod ? "&7&l• &a" : "&c") + value.name())
+                                        .map(value -> (value == sortMethod ? "&7&l• &a" : "&c") + SORT_METHOD_DISPLAY_NAME.get(value))
                                         .collect(Collectors.toList()))
                         .shiny()
                         .build();
@@ -129,7 +149,7 @@ public class WorldMenu extends PaginatedMenu {
                 if (!chunkAnalyse.hasRecorded()) {
                     player.sendMessage(ChatColor.RED + "You have to record a ChunkAnalyzer before trying to export an analyze!");
                 } else {
-                    worldAnalysesExport = Bukkit.imanity().getChunkAnalyse().getAnalyseExport(world, sortTarget, sortMethod);
+                    lastChunkAnalyzeResult = new ChunkAnalyzeResult(sortTarget, sortMethod, world);
                 }
             }
             @Override
@@ -138,7 +158,7 @@ public class WorldMenu extends PaginatedMenu {
             }
         });
         for (int i = 9; i < 18; i++) {
-            buttons.put(i, new BackButton(new HomeMenu()));
+            buttons.put(i, new BackButton(new HomeMenu(this.manager)));
         }
         return buttons;
     }
@@ -147,13 +167,13 @@ public class WorldMenu extends PaginatedMenu {
     public Map<Integer, Button> getAllPagesButtons(Player player) {
         Map<Integer, Button> buttons = new HashMap<>();
 
-        if (this.worldAnalysesExport == null) {
+        if (this.lastChunkAnalyzeResult == null) {
             for (int i = 0; i < 9; i++) {
                 buttons.put(buttons.size() + 9, new Button() {
                     @Override
                     public ItemStack getButtonItem(Player player) {
                         return new ItemBuilder(Material.PAPER)
-                                .name(ChatColor.RED + "Start the analyze to get a chunk report!")
+                                .name(ChatColor.RED + "&oStart the analyze to get a chunk report!")
                                 .build();
                     }
                 });
@@ -162,20 +182,22 @@ public class WorldMenu extends PaginatedMenu {
         }
         AtomicInteger count = new AtomicInteger(0);
 
-        this.worldAnalysesExport.getChunks().forEach(chunk -> buttons.put(buttons.size() + 9, new Button() {
+        this.lastChunkAnalyzeResult.getExport().getChunks().forEach(chunk -> buttons.put(buttons.size() + 9, new Button() {
             private final Location location = new Location(world, chunk.getX() << 4, player.getLocation().getY(), chunk.getZ() << 4);
 
             @Override
             public ItemStack getButtonItem(Player player) {
-                return new ItemBuilder(Material.NAME_TAG)
+                ChunkAnalyzeResult.WarningType warningType = lastChunkAnalyzeResult.getWarningType(chunk);
+
+                return new ItemBuilder(warningType.getIcon())
                         .name("&7&o[#" + count.addAndGet(1) + "] &3&l" + this.location.getX() + ", " + this.location.getZ())
                         .lore
                                 (
                                         "&7&m*------------------------------*",
-                                        "&f&l» &bTotal: &f" + chunk.getTotal().getTotal(),
-                                        "&f&l» &bAVG: &f" + chunk.getTotal().getAvg(),
-                                        "&f&l» &bMax: &f" + chunk.getTotal().getMax(),
-                                        "&f&l» &bCount: &f" + chunk.getTotal().getCount(),
+                                        "&f&l» &bTotal: &f" + FORMATTER.format(chunk.getTotal().getTotal()) + "ms",
+                                        "&f&l» &bAverage: " + warningType.getColor() + FORMATTER.format(chunk.getTotal().getAvg()) + "ms",
+                                        "&f&l» &bMaximum: &f" + FORMATTER.format(chunk.getTotal().getMax()) + "ms",
+                                        "&f&l» &bCount: &f" + chunk.getTotal().getCount() + "x",
                                         "&7&m*------------------------------*"
                                 )
                         .build();
