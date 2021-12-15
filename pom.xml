@@ -62,7 +62,7 @@
         <dependency>
             <groupId>org.imanity.imanityspigot</groupId>
             <artifactId>api</artifactId>
-            <version>2021.09.2b2</version>
+            <version>2021.11.1b1</version>
             <scope>provided</scope>
         </dependency>
         <!-- Original PaperSpigot -->
