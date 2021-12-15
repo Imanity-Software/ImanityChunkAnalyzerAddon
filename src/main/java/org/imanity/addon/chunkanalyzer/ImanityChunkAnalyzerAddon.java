@@ -8,8 +8,6 @@ import org.imanity.addon.chunkanalyzer.util.menu.Menu;
 
 public class ImanityChunkAnalyzerAddon extends JavaPlugin {
 
-    private ChunkAnalyzerManager manager;
-
     @Override
     public void onEnable() {
         long start = System.currentTimeMillis();
@@ -18,12 +16,12 @@ public class ImanityChunkAnalyzerAddon extends JavaPlugin {
             getLogger().warning("This server is not running ImanitySpigot3, ImanityChunkAnalyzerAddon need it to work! Disabling the plugin...");
             getServer().getPluginManager().disablePlugin(this);
         }
-        this.manager = new ChunkAnalyzerManager();
+        ChunkAnalyzerManager manager = new ChunkAnalyzerManager();
 
         Menu.init(this);
 
-        getCommand("chunkanalyzer").setExecutor(new ChunkAnalyzerCommand(this.manager));
-        getServer().getPluginManager().registerEvents(new ChunkAnalyzerListener(this.manager), this);
+        getCommand("chunkanalyzer").setExecutor(new ChunkAnalyzerCommand(manager));
+        getServer().getPluginManager().registerEvents(new ChunkAnalyzerListener(manager), this);
 
         getLogger().info("ImanityChunkAnalyzerAddon has been successfully started in " + (System.currentTimeMillis() - start) + "ms.");
     }
@@ -31,10 +29,6 @@ public class ImanityChunkAnalyzerAddon extends JavaPlugin {
     @Override
     public void onDisable() {
         Menu.destroy(this);
-    }
-
-    public ChunkAnalyzerManager getManager() {
-        return this.manager;
     }
 
     private boolean isServerRunningImanitySpigot3() {
