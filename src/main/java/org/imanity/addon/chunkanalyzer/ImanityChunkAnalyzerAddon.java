@@ -15,6 +15,7 @@ public class ImanityChunkAnalyzerAddon extends JavaPlugin {
         if (!isServerRunningImanitySpigot3()) {
             getLogger().warning("This server is not running ImanitySpigot3, ImanityChunkAnalyzerAddon need it to work! Disabling the plugin...");
             getServer().getPluginManager().disablePlugin(this);
+            return;
         }
         ChunkAnalyzerManager manager = new ChunkAnalyzerManager();
 
