@@ -25,11 +25,16 @@
 package org.imanity.addon.chunkanalyzer.menu;
 
 import org.bukkit.*;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.ItemStack;
 import org.imanity.addon.chunkanalyzer.data.ChunkAnalyzeResult;
 import org.imanity.addon.chunkanalyzer.manager.ChunkAnalyzerManager;
+import org.imanity.addon.chunkanalyzer.menu.callback.EntityTypeCallbackMenu;
+import org.imanity.addon.chunkanalyzer.menu.callback.TileEntityTypeCallbackMenu;
+import org.imanity.addon.chunkanalyzer.util.DateUtil;
+import org.imanity.addon.chunkanalyzer.util.TypeCallback;
 import org.imanity.addon.chunkanalyzer.util.item.ItemBuilder;
 import org.imanity.addon.chunkanalyzer.util.menu.Button;
 import org.imanity.addon.chunkanalyzer.util.menu.buttons.BackButton;
@@ -38,9 +43,7 @@ import org.imanity.imanityspigot.chunk.ChunkAnalyse;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -51,6 +54,8 @@ public class WorldMenu extends PaginatedMenu {
 
     private ChunkAnalyse.SortTarget sortTarget;
     private ChunkAnalyse.SortMethod sortMethod;
+    private EntityType entityType;
+    private ChunkAnalyse.TileEntityType tileEntityType;
 
     private ChunkAnalyzeResult lastChunkAnalyzeResult;
 
@@ -86,6 +91,36 @@ public class WorldMenu extends PaginatedMenu {
     public Map<Integer, Button> getGlobalButtons(Player player) {
         Map<Integer, Button> buttons = new HashMap<>();
 
+        buttons.put(1, new Button() {
+            @Override
+            public ItemStack getButtonItem(Player player) {
+                return new ItemBuilder(Material.MONSTER_EGG)
+                        .name(ChatColor.AQUA + "Change EntityType")
+                        .lore
+                                (
+                                        " ",
+                                        "&f&l» &bCurrent: &a" + (entityType == null ? "None" : entityType.getEntityClass().getSimpleName()),
+                                        "&f&l» &bChoice Count: &a" + EntityType.values().length,
+                                        " ",
+                                        "&cRight click to reset me."
+                                )
+                        .build();
+            }
+            @Override
+            public void clicked(Player player, int slot, ClickType clickType, int hotbarButton) {
+                if (clickType == ClickType.RIGHT) {
+                    entityType = null;
+                } else {
+                    new EntityTypeCallbackMenu(WorldMenu.this, (TypeCallback<EntityType>) data -> entityType = data).openMenu(player);
+                }
+            }
+
+            @Override
+            public boolean shouldUpdate(Player player, int slot, ClickType clickType) {
+                return true;
+            }
+        });
+
         buttons.put(2, new Button() {
             @Override
             public ItemStack getButtonItem(Player player) {
@@ -110,6 +145,50 @@ public class WorldMenu extends PaginatedMenu {
                 return true;
             }
         });
+
+        buttons.put(4, new Button() {
+            @Override
+            public ItemStack getButtonItem(Player player) {
+                List<String> lore = new ArrayList<>();
+
+                lore.add(" ");
+
+                if (lastChunkAnalyzeResult == null) {
+                    lore.add(ChatColor.RED + "There is actually no analyze report for this world.");
+                    lore.add(" ");
+                    lore.add("&7&oConfigure it and click on me to start one!");
+                } else {
+                    lore.add(ChatColor.AQUA + "Analyze for this world created at: &a" + DateUtil.getDateFormat(lastChunkAnalyzeResult.getTime()));
+                    lore.add("&7&l• &aSettings");
+                    lore.add("  &f&l» &bSort Method: &a" + SORT_METHOD_DISPLAY_NAME.get(lastChunkAnalyzeResult.getSortMethod()));
+                    lore.add("  &f&l» &bSort Target: &a" + SORT_TARGET_DISPLAY_NAME.get(lastChunkAnalyzeResult.getSortTarget()));
+                    lore.add("  &f&l» &bEntity Type: &a" + (entityType == null ? "None" : entityType.getEntityClass().getSimpleName()));
+                    lore.add("  &f&l» &bTile Entity Type: &a" + (tileEntityType == null ? "None" : tileEntityType.name()));
+                    lore.add(" ");
+                    lore.add("&7&oYou can configure a new analyze and click on me to generate a new report.");
+                }
+                return new ItemBuilder(Material.COMPASS)
+                        .name(ChatColor.GREEN + "Start Chunk Analyze")
+                        .lore(lore)
+                        .shiny()
+                        .build();
+            }
+            @Override
+            public void clicked(Player player, int slot, ClickType clickType, int hotbarButton) {
+                ChunkAnalyse chunkAnalyse = Bukkit.imanity().getChunkAnalyse();
+
+                if (!chunkAnalyse.hasRecorded()) {
+                    player.sendMessage(ChatColor.RED + "You have to record a ChunkAnalyzer before trying to export an analyze!");
+                } else {
+                    lastChunkAnalyzeResult = new ChunkAnalyzeResult(sortTarget, sortMethod, entityType, tileEntityType, world);
+                }
+            }
+            @Override
+            public boolean shouldUpdate(Player player, int slot, ClickType clickType) {
+                return true;
+            }
+        });
+
         buttons.put(6, new Button() {
             @Override
             public ItemStack getButtonItem(Player player) {
@@ -134,22 +213,28 @@ public class WorldMenu extends PaginatedMenu {
                 return true;
             }
         });
-        buttons.put(4, new Button() {
+
+        buttons.put(7, new Button() {
             @Override
             public ItemStack getButtonItem(Player player) {
-                return new ItemBuilder(Material.COMPASS)
-                        .name(ChatColor.GREEN + "Start Chunk Analyze")
-                        .shiny()
+                return new ItemBuilder(Material.CHEST)
+                        .name(ChatColor.AQUA + "Change TileEntityType")
+                        .lore
+                                (
+                                        " ",
+                                        "&f&l» &bCurrent: &a" + (tileEntityType == null ? "None" : tileEntityType.name()),
+                                        " ",
+                                        "&c&lNOTE: If the EntityType option is not set to 'None' this option will not be considered.",
+                                        "&cRight click to reset me."
+                                )
                         .build();
             }
             @Override
             public void clicked(Player player, int slot, ClickType clickType, int hotbarButton) {
-                ChunkAnalyse chunkAnalyse = Bukkit.imanity().getChunkAnalyse();
-
-                if (!chunkAnalyse.hasRecorded()) {
-                    player.sendMessage(ChatColor.RED + "You have to record a ChunkAnalyzer before trying to export an analyze!");
+                if (clickType == ClickType.RIGHT) {
+                    tileEntityType = null;
                 } else {
-                    lastChunkAnalyzeResult = new ChunkAnalyzeResult(sortTarget, sortMethod, world);
+                    new TileEntityTypeCallbackMenu(WorldMenu.this, (TypeCallback<ChunkAnalyse.TileEntityType>) data -> tileEntityType = data).openMenu(player);
                 }
             }
             @Override
@@ -157,6 +242,7 @@ public class WorldMenu extends PaginatedMenu {
                 return true;
             }
         });
+
         for (int i = 9; i < 18; i++) {
             buttons.put(i, new BackButton(new HomeMenu(this.manager)));
         }
@@ -217,5 +303,9 @@ public class WorldMenu extends PaginatedMenu {
     @Override
     public int getMaxItemsPerPage(Player player) {
         return 45;
+    }
+
+    public World getWorld() {
+        return this.world;
     }
 }

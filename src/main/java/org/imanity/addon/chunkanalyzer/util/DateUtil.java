@@ -22,29 +22,22 @@
  * SOFTWARE.
  */
 
-package org.imanity.addon.chunkanalyzer.listener;
+package org.imanity.addon.chunkanalyzer.util;
 
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.imanity.addon.chunkanalyzer.manager.ChunkAnalyzerManager;
-import org.imanity.imanityspigot.event.chunk.ChunkAnalyseEndEvent;
-import org.imanity.imanityspigot.event.chunk.ChunkAnalyseStartEvent;
+import lombok.experimental.UtilityClass;
 
-public class ChunkAnalyzerListener implements Listener {
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
-    private final ChunkAnalyzerManager manager;
+@UtilityClass
+public class DateUtil {
 
-    public ChunkAnalyzerListener(ChunkAnalyzerManager manager) {
-        this.manager = manager;
-    }
+    private final static SimpleDateFormat FORMATTER = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
 
-    @EventHandler
-    private void onChunkAnalyseStart(ChunkAnalyseStartEvent event) {
-        this.manager.setStartedAnalyzerRecordTime(System.currentTimeMillis());
-    }
-
-    @EventHandler
-    private void onChunkAnalyzeEnd(ChunkAnalyseEndEvent event) {
-        this.manager.setEndedAnalyzerRecordTime(System.currentTimeMillis());
+    public static String getDateFormat(long time) {
+        if (time == 0) {
+            return "None";
+        }
+        return FORMATTER.format(new Date(time));
     }
 }

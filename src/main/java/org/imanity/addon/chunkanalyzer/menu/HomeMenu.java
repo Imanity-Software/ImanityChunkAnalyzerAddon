@@ -32,6 +32,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.ItemStack;
 import org.imanity.addon.chunkanalyzer.manager.ChunkAnalyzerManager;
+import org.imanity.addon.chunkanalyzer.util.DateUtil;
 import org.imanity.addon.chunkanalyzer.util.item.ItemBuilder;
 import org.imanity.addon.chunkanalyzer.util.menu.Button;
 import org.imanity.addon.chunkanalyzer.util.menu.pagination.PaginatedMenu;
@@ -66,6 +67,7 @@ public class HomeMenu extends PaginatedMenu {
             public ItemStack getButtonItem(Player player) {
                 return new ItemBuilder(Material.INK_SACK)
                         .name(ChatColor.GREEN + "Start ChunkAnalyzer Record")
+                        .lore(" ", "&7&oLast analyze has been started at: " + DateUtil.getDateFormat(manager.getStartedAnalyzerRecordTime()))
                         .data(10)
                         .shiny()
                         .build();
@@ -75,17 +77,43 @@ public class HomeMenu extends PaginatedMenu {
                 if (chunkAnalyse.isRecording()) {
                     player.sendMessage(ChatColor.RED + "The ChunkAnalyzer is already started!");
                 } else {
-                    player.sendMessage(ChatColor.GREEN + "You have successfully started the ChunkAnalyzer.");
                     chunkAnalyse.start();
+                    player.sendMessage(ChatColor.GREEN + "You have successfully started the ChunkAnalyzer.");
                 }
+            }
+            @Override
+            public boolean shouldUpdate(Player player, int slot, ClickType clickType) {
+                return true;
             }
         });
         buttons.put(4, new Button() {
             @Override
             public ItemStack getButtonItem(Player player) {
                 return new ItemBuilder(Material.BOOK)
+                        .name(ChatColor.AQUA + "&lInformations / Help")
+                        .lore(
+                                "&7&m*------------------------------*",
+                                "&7&l• &3&oHow does this addon work, how to use it?",
+                                " ",
+                                "&7&l» &bThis plugin is using the API of",
+                                "&biSpigot3 about ChunkAnalyzer system.",
+                                "&7&l» &bIt give you report easily",
+                                "&bconfigurables everything via amazing menus.",
+                                "&7&l» &bThis is very efficient and simple",
+                                "&bto track laggy chunks on your server.",
+                                "&7&l» &bFirst, start the analyze thanks to",
+                                "&bthe buttons and then click on a world, let's go!",
+                                " ",
+                                "&3&oStill need help? &b&ldiscord.gg/GBZKR3n",
+                                "&7&m*------------------------------*"
+                            )
                         .shiny()
-                        .build(); // informations
+                        .build();
+            }
+
+            @Override
+            public void clicked(Player player, int slot, ClickType clickType, int hotbarButton) {
+                player.sendMessage(ChatColor.AQUA + "Imanity Software discord support:§o https://discord.gg/GBZKR3n");
             }
         });
         buttons.put(6, new Button() {
@@ -93,6 +121,7 @@ public class HomeMenu extends PaginatedMenu {
             public ItemStack getButtonItem(Player player) {
                 return new ItemBuilder(Material.INK_SACK)
                         .name(ChatColor.RED + "End ChunkAnalyzer Record")
+                        .lore(" ", "&7&oLast analyze has been ended at: " + DateUtil.getDateFormat(manager.getEndedAnalyzerRecordTime()))
                         .data(1)
                         .shiny()
                         .build();
@@ -102,9 +131,14 @@ public class HomeMenu extends PaginatedMenu {
                 if (!chunkAnalyse.isRecording()) {
                     player.sendMessage(ChatColor.RED + "The ChunkAnalyzer is not started!");
                 } else {
-                    player.sendMessage(ChatColor.GREEN + "You have successfully ended the ChunkAnalyzer.");
                     chunkAnalyse.stop();
+                    player.sendMessage(ChatColor.GREEN + "You have successfully ended the ChunkAnalyzer.");
                 }
+            }
+
+            @Override
+            public boolean shouldUpdate(Player player, int slot, ClickType clickType) {
+                return true;
             }
         });
         for (int i = 9; i < 18; i++) {

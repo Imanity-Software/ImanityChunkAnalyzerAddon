@@ -26,15 +26,12 @@ package org.imanity.addon.chunkanalyzer.manager;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import lombok.Getter;
-import lombok.Setter;
 import org.bukkit.World;
 import org.imanity.addon.chunkanalyzer.menu.WorldMenu;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-@Getter@Setter
 public class ChunkAnalyzerManager {
 
     private final Cache<World, WorldMenu> menus;
@@ -53,5 +50,21 @@ public class ChunkAnalyzerManager {
             exception.printStackTrace();
         }
         return null;
+    }
+
+    public long getStartedAnalyzerRecordTime() {
+        return this.startedAnalyzerRecordTime;
+    }
+
+    public long getEndedAnalyzerRecordTime() {
+        return this.endedAnalyzerRecordTime;
+    }
+
+    public void setEndedAnalyzerRecordTime(long endedAnalyzerRecordTime) {
+        this.endedAnalyzerRecordTime = endedAnalyzerRecordTime;
+    }
+
+    public void setStartedAnalyzerRecordTime(long startedAnalyzerRecordTime) {
+        this.startedAnalyzerRecordTime = startedAnalyzerRecordTime;
     }
 }

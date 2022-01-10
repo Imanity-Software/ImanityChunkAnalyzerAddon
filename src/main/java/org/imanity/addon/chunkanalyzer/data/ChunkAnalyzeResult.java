@@ -28,6 +28,7 @@ import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.entity.EntityType;
 import org.imanity.imanityspigot.ImanitySpigot;
 import org.imanity.imanityspigot.chunk.ChunkAnalyse;
 import org.imanity.imanityspigot.config.ImanitySpigotWorldConfig;
@@ -41,10 +42,19 @@ public class ChunkAnalyzeResult {
     private final long time;
     private final ImanitySpigotWorldConfig worldConfig;
 
-    public ChunkAnalyzeResult(ChunkAnalyse.SortTarget sortTarget, ChunkAnalyse.SortMethod sortMethod, World world) {
+    // NOT USEFUL TO USE MULTIPLE CONSTRUCTOR SINCE WE WANT TO HANDLE IN IF THINGS ARE NULL OR NOT
+    public ChunkAnalyzeResult(ChunkAnalyse.SortTarget sortTarget, ChunkAnalyse.SortMethod sortMethod,
+                              EntityType entityType, ChunkAnalyse.TileEntityType tileEntityType, World world) {
         this.sortTarget = sortTarget;
         this.sortMethod = sortMethod;
-        this.export = Bukkit.imanity().getChunkAnalyse().getAnalyseExport(world, sortTarget, sortMethod);
+
+        if (entityType != null) {
+            this.export = Bukkit.imanity().getChunkAnalyse().getAnalyseExport(world, sortTarget, sortMethod, entityType);
+        } else if (tileEntityType != null) {
+            this.export = Bukkit.imanity().getChunkAnalyse().getAnalyseExport(world, sortTarget, sortMethod, tileEntityType);
+        } else {
+            this.export = Bukkit.imanity().getChunkAnalyse().getAnalyseExport(world, sortTarget, sortMethod);
+        }
         this.time = System.currentTimeMillis();
         this.worldConfig = ImanitySpigot.INSTANCE.getWorldConfig(world.getName());
     }
